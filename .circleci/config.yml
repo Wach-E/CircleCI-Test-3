@@ -28,7 +28,7 @@ jobs:
                 continue
               else
                 aws s3 rb s3://$bucket --force 	
-              if
+              fi
             done
 
   # create_update_cdn_service_and_connect_front_end:
