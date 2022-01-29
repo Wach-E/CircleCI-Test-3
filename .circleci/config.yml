@@ -1,0 +1,62 @@
+# # PM Server CD
+# version: 2.1
+
+# jobs:
+#   create_infrastructure:
+#     docker:
+#       - image: amazon/aws-cli
+#     steps:
+#       - checkout
+#       - run:
+#           name: Create Infrastructure
+#           command: |
+#             aws cloudformation deploy --template-file template.yml --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+#             --region us-west-2
+#       - run: yum install -y tar gzip
+#       - run:
+#           name: Connect to infrastructure
+#           command: |
+#             echo "[app]" > ~/inventory.ini
+#             aws ec2 describe-instances --filters Name=key-name,Values=flask --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> ~/inventory.ini
+#             chmod 777 ~/inventory.ini
+#             cat ~/inventory.ini
+#       - persist_to_workspace:
+#           root: ~/
+#           paths:
+#             - inventory.ini
+#       - run:
+#           name: Response to infra failure
+#           command: |
+#             aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+#             --region us-west-2
+#           when: on_fail
+
+#   configure_infrastructure:
+#     docker:
+#       - image: cimg/base:stable-20.04
+#     steps:
+#       - checkout
+#       - add_ssh_keys:
+#           # You can get this ID in the section where you registered the SSH Key
+#           fingerprints: ["ac:30:22:7c:87:70:c1:59:c4:40:ee:da:c9:e0:50:af"]
+#       - run: sudo apt install -y tar gzip
+#       - attach_workspace:
+#           at: ~/
+#       - run:
+#           name: Install Ansible
+#           command: |
+#             sudo apt-get install software-properties-common
+#             sudo apt-add-repository ppa:ansible/ansible
+#             sudo apt-get update
+#             sudo apt-get install ansible
+#       - run:
+#           name: Run Playbook and Configure server
+#           command: |
+#             ansible-playbook main.yaml
+# workflows:
+#   deploy:
+#     jobs:
+#       - create_infrastructure
+#       - configure_infrastructure:
+#           requires:
+#             - create_infrastructure

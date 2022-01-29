@@ -1,0 +1,1 @@
+Create S3 bucket to host file: https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteHosting.html
