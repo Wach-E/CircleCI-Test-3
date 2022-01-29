@@ -21,8 +21,18 @@ jobs:
       - run:
           name: Delete old buckets.
           command: |
-            aws s3api list-buckets --query "Buckets[].Name > ~/buckets.txt
+            aws s3api list-buckets --query "Buckets[].Name" > ~/buckets.txt
             cat ~/buckets.txt
+            for bucket in $(cat ~/buckets.txt)
+            do
+              location="$(aws s3api get-bucket-location –bucket $bucket -–output text)"
+              if [ $bucket == "productionbucket-${CIRCLE_WORKFLOW_ID:0:7}" ]
+              then
+                continue
+              else
+                aws s3 rb s3://$bucket -–region $location -–force
+              fi
+            done
 
   # create_update_cdn_service_and_connect_front_end:
   #   docker:
