@@ -23,7 +23,7 @@ jobs:
           command: |
             for bucket in $(aws s3api list-buckets --query "Buckets[].Name")
             do	 
-              if [bucket == productionbucket-${CIRCLE_WORKFLOW_ID:0:7} ]
+              if [ $bucket == productionbucket-${CIRCLE_WORKFLOW_ID:0:7} ]
               then
                 continue
               else
