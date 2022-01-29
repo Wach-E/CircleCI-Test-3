@@ -89,7 +89,7 @@ workflows:
       - create_update_cdn_service_and_connect_front_end
       - get_last_deployment_id:
           requires:
-            - create_and_deploy_front_end
+            - create_bucket_and_deploy_front_end
       - clean_up_old_front_end:
           requires:
             - get_last_deployment_id
