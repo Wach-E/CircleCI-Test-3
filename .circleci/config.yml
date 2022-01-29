@@ -26,12 +26,7 @@ jobs:
             for bucket in $(cat ~/buckets.txt)
             do
               echo $bucket
-              # if [ $bucket == productionbucket-${CIRCLE_WORKFLOW_ID:0:7}" ]
-              # then
-              #   continue
-              # else
-              #   aws s3 rb s3://$bucket -–force
-              # fi
+              
             done
 
   # create_update_cdn_service_and_connect_front_end:
