@@ -1,62 +1,30 @@
-# # PM Server CD
-# version: 2.1
+version: 2.1
 
-# jobs:
-#   create_infrastructure:
-#     docker:
-#       - image: amazon/aws-cli
-#     steps:
-#       - checkout
-#       - run:
-#           name: Create Infrastructure
-#           command: |
-#             aws cloudformation deploy --template-file template.yml --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-#             --region us-west-2
-#       - run: yum install -y tar gzip
-#       - run:
-#           name: Connect to infrastructure
-#           command: |
-#             echo "[app]" > ~/inventory.ini
-#             aws ec2 describe-instances --filters Name=key-name,Values=flask --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> ~/inventory.ini
-#             chmod 777 ~/inventory.ini
-#             cat ~/inventory.ini
-#       - persist_to_workspace:
-#           root: ~/
-#           paths:
-#             - inventory.ini
-#       - run:
-#           name: Response to infra failure
-#           command: |
-#             aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-#             --region us-west-2
-#           when: on_fail
+orbs:
+  aws-cli: circleci/aws-cli@2.0.3
 
-#   configure_infrastructure:
-#     docker:
-#       - image: cimg/base:stable-20.04
-#     steps:
-#       - checkout
-#       - add_ssh_keys:
-#           # You can get this ID in the section where you registered the SSH Key
-#           fingerprints: ["ac:30:22:7c:87:70:c1:59:c4:40:ee:da:c9:e0:50:af"]
-#       - run: sudo apt install -y tar gzip
-#       - attach_workspace:
-#           at: ~/
-#       - run:
-#           name: Install Ansible
-#           command: |
-#             sudo apt-get install software-properties-common
-#             sudo apt-add-repository ppa:ansible/ansible
-#             sudo apt-get update
-#             sudo apt-get install ansible
-#       - run:
-#           name: Run Playbook and Configure server
-#           command: |
-#             ansible-playbook main.yaml
-# workflows:
-#   deploy:
-#     jobs:
-#       - create_infrastructure
-#       - configure_infrastructure:
-#           requires:
-#             - create_infrastructure
+# commands:
+# destroy_environment:
+#   steps:
+#     - run:
+#         name: Destroy environment
+#         # ${CIRCLE_WORKFLOW_ID} is a Built-in environment variable
+#         # ${CIRCLE_WORKFLOW_ID:0:5} takes the first 5 chars of the variable CIRCLE_CI_WORKFLOW_ID
+#         when: on_fail
+#         command: |
+#           aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5}
+
+create_and_deploy_front_end:
+  docker:
+    - image: amazon/aws-cli
+  steps:
+    - checkout
+    - run:
+        name: Execute bucket.yml - Create Cloudformation Stack
+        command: |
+          aws cloudformation deploy \
+          --template-file bucket.yml \
+          --stack-name stack-create-bucket-${CIRCLE_WORKFLOW_ID:0:7} \
+          --parameter-overrides MyBucketName="mybucket-${CIRCLE_WORKFLOW_ID:0:7}"
+    # Uncomment the step below if yoou wish to upload all contents of the current directory to the S3 bucket
+    - run: aws s3 sync . s3://mybucket-${CIRCLE_WORKFLOW_ID:0:7} --delete
