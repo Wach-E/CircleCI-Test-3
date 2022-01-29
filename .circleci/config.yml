@@ -25,12 +25,12 @@ jobs:
             cat ~/buckets.txt
             for bucket in $(cat ~/buckets.txt)
             do
-              location=$(aws s3api get-bucket-location –-bucket $i –output text)
+              location=$(aws s3api get-bucket-location –-bucket=$bucket –-output text)
               if [ $bucket == productionbucket-${CIRCLE_WORKFLOW_ID:0:7} ]
               then
                 continue
               else
-                aws s3api delete-bucket --bucket $bucket --region $location
+                aws s3api delete-bucket --bucket $bucket --region=$location
               fi
               
             done
