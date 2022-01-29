@@ -24,7 +24,7 @@ jobs:
           command: |
             aws cloudformation deploy \
             --template-file cloudfront.yml \
-            --stack-name production-distro \
+            --stack-name prod-distro \
             --parameter-overrides PipelineID="productionbucket-${CIRCLE_WORKFLOW_ID:0:7}"
 
   # promote_to_production:
