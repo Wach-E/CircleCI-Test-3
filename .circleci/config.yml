@@ -13,7 +13,7 @@ jobs:
             --template-file bucket.yml \
             --stack-name stack-create-bucket-${CIRCLE_WORKFLOW_ID:0:7} \
             --parameter-overrides MyBucketName="productionbucket-${CIRCLE_WORKFLOW_ID:0:7}"
-      - run: aws s3 sync . s3://productionbucket-${CIRCLE_WORKFLOW_ID:0:7}
+      - run: aws s3 sync . s3://productionbucket-${CIRCLE_WORKFLOW_ID:0:7} --delete
 
   create_update_cdn_service_and_connect_front_end:
     docker:
