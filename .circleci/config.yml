@@ -21,7 +21,7 @@ jobs:
       - run:
           name: Delete old buckets.
           command: |
-            aws s3api list-buckets --query "Buckets[].Name -–output text> ~/buckets.txt
+            aws s3api list-buckets --query "Buckets[].Name > ~/buckets.txt
             for bucket in $(cat ~/buckets.txt)
             do
               location=$(aws s3api get-bucket-location –bucket $bucket -–output text)
