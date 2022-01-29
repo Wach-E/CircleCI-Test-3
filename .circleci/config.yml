@@ -18,6 +18,14 @@ jobs:
           command: |
             aws s3 sync . s3://productionbucket-${CIRCLE_WORKFLOW_ID:0:7}
 
+      - run:
+          name: Fetch and save the old pipeline ID (bucket name) responsible for the last release.
+          command: |
+            aws cloudformation \
+            list-exports --query "Exports[?Name==\`PipelineID\`].Value" \
+            --no-paginate --output text > ~/textfile.txt
+            cat ~/textfile.txt
+
   # create_update_cdn_service_and_connect_front_end:
   #   docker:
   #     - image: amazon/aws-cli
