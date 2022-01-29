@@ -13,83 +13,76 @@ jobs:
             --template-file bucket.yml \
             --stack-name stack-create-bucket-${CIRCLE_WORKFLOW_ID:0:7} \
             --parameter-overrides MyBucketName="productionbucket-${CIRCLE_WORKFLOW_ID:0:7}"
-      - run: aws s3 sync . s3://productionbucket-${CIRCLE_WORKFLOW_ID:0:7} --delete
-
-  create_update_cdn_service_and_connect_front_end:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
       - run:
-          name: Execute cloudfront.yml - Create CDN service for frontend
+          name: Execute bucket.yml - Create host bucket for frontend
           command: |
-            aws cloudformation deploy \
-            --template-file cloudfront.yml \
-            --stack-name prod-distro \
-            --parameter-overrides PipelineID="productionbucket-${CIRCLE_WORKFLOW_ID:0:7}"
+            aws s3 sync . s3://productionbucket-${CIRCLE_WORKFLOW_ID:0:7}
 
-  # promote_to_production:
+  # create_update_cdn_service_and_connect_front_end:
   #   docker:
   #     - image: amazon/aws-cli
   #   steps:
   #     - checkout
   #     - run:
-  #         name: Execute cloudfront.yml
+  #         name: Execute cloudfront.yml - Create CDN service for frontend
   #         command: |
   #           aws cloudformation deploy \
   #           --template-file cloudfront.yml \
-  #           --stack-name production-distro \
-  #           --parameter-overrides PipelineID="mybucket-${CIRCLE_WORKFLOW_ID:0:7}"
+  #           --stack-name prod-distro \
+  #           --parameter-overrides PipelineID="productionbucket-${CIRCLE_WORKFLOW_ID:0:7}"
 
-  get_last_deployment_id:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      - run: yum install -y tar gzip
-      - run:
-          name: Fetch and save the old pipeline ID (bucket name) responsible for the last release.
-          command: |
-            aws cloudformation \
-            list-exports --query "Exports[?Name==\`PipelineID\`].Value" \
-            --no-paginate --output text > ~/textfile.txt
-            # cat textfile.txt
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - textfile.txt
+  ## Add this logic after first release ##
+  # get_last_deployment_id:
+  #   docker:
+  #     - image: amazon/aws-cli
+  #   steps:
+  #     - checkout
+  #     - run: yum install -y tar gzip
+  #     - run:
+  #         name: Fetch and save the old pipeline ID (bucket name) responsible for the last release.
+  #         command: |
+  #           aws cloudformation \
+  #           list-exports --query "Exports[?Name==\`PipelineID\`].Value" \
+  #           --no-paginate --output text > ~/textfile.txt
+  #           # cat textfile.txt
+  #     - persist_to_workspace:
+  #         root: ~/
+  #         paths:
+  #           - textfile.txt
 
-  clean_up_old_front_end:
-    docker:
-      - image: amazon/aws-cli
-    steps:
-      - checkout
-      - run: yum install -y tar gzip
-      - attach_workspace:
-          at: ~/
-      - run:
-          name: Destroy the previous production version's S3 bucket and CloudFormation stack.
-          # Use $OldBucketID environment variable or mybucket644752792305 below.
-          # Similarly, you can create and use $OldStackID environment variable in place of production-distro
-          command: |
-            if [ $(cat ~/textfile.txt) == "" ]
-            then
-              exit 0
-            else
-              export OldBucketID=$(cat ~/textfile.txt)
-              aws s3 rm "s3://${OldBucketID}" --recursive
-            fi
+  # clean_up_old_front_end:
+  #   docker:
+  #     - image: amazon/aws-cli
+  #   steps:
+  #     - checkout
+  #     - run: yum install -y tar gzip
+  #     - attach_workspace:
+  #         at: ~/
+  #     - run:
+  #         name: Destroy the previous production version's S3 bucket and CloudFormation stack.
+  #         # Use $OldBucketID environment variable or mybucket644752792305 below.
+  #         # Similarly, you can create and use $OldStackID environment variable in place of production-distro
+  #         command: |
+  #           if [ $(cat ~/textfile.txt) == "" ]
+  #           then
+  #             exit 0
+  #           else
+  #             export OldBucketID=$(cat ~/textfile.txt)
+  #             aws s3 rm "s3://${OldBucketID}" --recursive
+  #           fi
 
 workflows:
   deploy_front_end:
     jobs:
       - create_bucket_and_deploy_front_end
-      - create_update_cdn_service_and_connect_front_end:
-          requires:
-            - create_bucket_and_deploy_front_end
-      - get_last_deployment_id:
-          requires:
-            - create_update_cdn_service_and_connect_front_end
-      - clean_up_old_front_end:
-          requires:
-            - get_last_deployment_id
+      # - create_update_cdn_service_and_connect_front_end:
+      #     requires:
+      #       - create_bucket_and_deploy_front_end
+
+      # Add this logic after first release
+      # - get_last_deployment_id:
+      #     requires:
+      #       - create_update_cdn_service_and_connect_front_end
+      # - clean_up_old_front_end:
+      #     requires:
+      #       - get_last_deployment_id
